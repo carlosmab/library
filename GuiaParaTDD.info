@@ -1,0 +1,171 @@
+##########################################################################################
+# 					LARAVEL TESTING 												     #
+##########################################################################################
+
+
+A. Create Project:  "laravel new new-project"
+
+B. Git Start:  "git init", "git add .", "git commit 'first commit' "
+
+C. Configure Database:
+	.env : "DATABASE:sqlite" 
+	phpunit.xml : 
+        <server name="DB_CONNECTION" value="sqlite"/>
+        <server name="DB_DATABASE" value=":memory:"/>
+
+D. Create Test Class in /tests/Feature  "ExampleClassTest"
+	Add in class "use RefreshDatabase;"
+
+	Run tests .\vendor\bin\phpunit --filter name_test
+
+E. STORE: ##############################################################################
+	Create test function in test class, 
+		
+		public function add_new_model_register()
+		{
+			$this->withoutExceptionHandling();
+
+			$response = $this->post('/model',[
+					......model columns.....
+		    ]);
+
+		    $response->assertOk();  Testing http response
+		    $this->assertCount(1, Book::all()); Testing creation in DB
+		}
+			
+	TESTING_CICLE
+
+	1. Test Fail: Http not responding
+		Then: Create post route in web.php
+			Route::post("/models", "ModelController@store");
+
+	2. Test Fail: Class "ModelController" not found
+		Then: Create ModelController class
+			php artisan make:controller ModelController
+
+	3. Test Fail: Not method "store" found
+		Then: Create empty method store in "model controller class"
+
+	4. Test HTTP:POST passes, but Test Db Fail:
+		Then: Create model "Model":
+			php artisan make:model Model -m  //(migration)
+
+			in Test Class import App\Model
+
+	5. Test Fail: 0 saved, 1 expected!
+		Then: Add create in "store" method in "ModelController" 
+
+		Model::create([
+    		'field1' => request("field1"),	
+    	]);  
+
+    6. Test Fail: Model has no fillable fields! 
+    	Then: Add property in Model for remove field protection in model:
+    		protected $guarded = [];
+
+    7. Test Fail: Field column not found  (Repeat for each field!!)
+    	Then: Update model migration with field!
+    		$table->....
+
+    8. Test SUCCESS!!!
+
+    VALIDATION TESTS
+
+    	/** @test */
+    	public function validation_test_method() 
+    	{
+    		$response = $this->post('/books',[
+	            'field' => 'Invalid field content',
+	            ... valid field contents for other ...
+        	]);
+
+        	$response->assertSessionHasErrors('field');  
+    	}
+
+    1. Test Fail: Database Error (Not validation error)
+    	Then: Create validation in "ModelController"
+	    	$data = request()->validate([
+	    		...validations...
+	    	]);
+	    	Model::create($data);
+
+	2. Test Fail: Validation error
+		Then: Disable WithoutExceptionHandling
+
+	3. Test SUCCEDD!!
+
+	4. Repeat for all field Validation!!
+
+	3. Testing creation again: Test Fail:
+		Then: Add no validation fields to ModelController@store
+		 	$data = request()->validate([
+	    		...validations...
+	    		"field_no_validated" => "",
+	    		"field_no_validated2" => "",
+	    	]);
+
+	    	Model::create($data);
+
+
+D. UPDATE ####################################################################################
+
+	Create test update model:
+
+		public function update_model_register()
+		{
+			$this->withoutExceptionHandling();
+
+			$this->post('/model',[
+					......model columns.....
+		    ]);
+
+		    $model = Model::first();	
+
+		    $response = $this->patch('/model' . $model->id,[
+					......model columns modified.....
+		    ]);
+
+		    $this->assertEquals("Edited field value", Model::first()->editedfield); Testing updated DB
+			///Repeat each field!!!!
+		}
+	
+	1. Fail test: Method PATCH not supported!
+			Then: Create route in web.php
+				Route::patch("/models/{model}", "ModelController@update");	
+
+	2. Fail test: "update" method not exist!
+			Then: Create "update" method in "ModelController"
+				public function update(Model $model)
+				{
+				}
+
+	3. Fail test: fields are not equals!
+			Then: Write code in "update" method
+				public function update(Model $model) 
+				{
+					$data = request()->validate([
+	    				...validations...
+	    				"field_no_validated" => "",
+	    				"field_no_validated2" => "",
+	    			]);
+
+	    			$model->update($data);	
+				}
+
+	4. Test SUCCESS				
+
+	5. Refactor Validate request into a function:
+			public function validateRequest() 
+				{
+					return request()->validate([
+	    				...validations...
+	    				"field_no_validated" => "",
+	    				"field_no_validated2" => "",
+	    			]);
+	    		}
+
+	    	//Replace validateRequest in "store" and "update" methods!!
+
+	6. Test SUCCESS!!
+
+	7. git moment!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
