@@ -16,4 +16,5 @@ class AuthorsController extends Controller
 
     	Author::create($data);
     }
+
 }
