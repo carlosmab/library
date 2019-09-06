@@ -11,7 +11,7 @@ C. Configure Database:
 	.env : "DATABASE:sqlite" 
 	phpunit.xml : 
         <server name="DB_CONNECTION" value="sqlite"/>
-        <server name="DB_DATABASE" value=":memory:"/>
+        <server name="DB_DATABASE" value=":memory:"/>2
 
 D. Create Test Class in /tests/Feature  "ExampleClassTest"
 	Add in class "use RefreshDatabase;"
@@ -59,7 +59,7 @@ E. STORE: ######################################################################
     		'field1' => request("field1"),	
     	]);  
 
-    6. Test Fail: Model has no fillable fields! 
+    6. Test Fail: Model has no fillable fields! Mass asignement error
     	Then: Add property in Model for remove field protection in model:
     		protected $guarded = [];
 
@@ -68,6 +68,20 @@ E. STORE: ######################################################################
     		$table->....
 
     8. Test SUCCESS!!!
+
+    9. For DATE formattng use carbon in model!!
+    		use Carbon\Carbon;
+    	...
+	    	protected $dates = ['dateColumn'];
+
+	    	public function setDateColumnAttribute($dateColumn)
+		    {
+		    	$this->attributes['dateColumn'] = Carbon::parse($dob);
+		    }
+	    ...
+
+	   	In Test: 
+	   	 	$this->assertInstanceOf(Carbon::class, Model::first()->dateColumn);
 
     VALIDATION TESTS
 
@@ -106,8 +120,7 @@ E. STORE: ######################################################################
 
 	    	Model::create($data);
 
-
-D. UPDATE ####################################################################################
+D. UPDATE: #############################################################################
 
 	Create test update model:
 
@@ -168,4 +181,53 @@ D. UPDATE ######################################################################
 
 	6. Test SUCCESS!!
 
-	7. git moment!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	7. git moment!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+F. DELETE: ##############################################################################
+	Create test
+
+	/** test */
+	public function a_model_can_be_deleted()
+	{
+		$this->withoutExceptionHandling();
+
+		$this->post('/model',[
+				......model columns.....
+	    ]);
+
+	    $model = Model::first();	
+
+	    $this->assertCount(1, Model::all());
+
+	    $response = $this->patch('/delete/' . $model->id);
+
+	    $this->assertCount(0, Model::all()); 
+	}
+
+	1. Test Fail: No route to DELETE
+		Then: Create route
+			Route::delete("/models/{model}", "ModelController@delete");
+
+	2. Test Fail: No method "delete" in controller
+		Then: Create method "delete"
+			public function delete(Model $model) 
+			{
+			}
+
+	3. Test Fail: Counts equals to 1 not 0
+		Then: Put the delete logic in "delete" method
+			public function delete(Model $model) 
+			{
+				$model->delete();
+			}	
+
+	4. Test SUCCESS!!
+
+G. TEST REDIRECTS (optional)
+	Important create "path" method in Model for indicates where is the model info
+		public function path() 
+		{
+			return "/models/" . $this->id;
+		}	
+	Update test with 
+		redirects($model->path())
